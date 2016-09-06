@@ -12,10 +12,11 @@ func main() {
 	if err != nil {
 		log.Fatalf("[ERROR] Can't create connection!: %v", err)
 	}
+	defer conn.Close()
 
 	//Escrever na socket
 	fmt.Fprintf(conn, "Testing connection")
 
-	response, err := bufio.NewReader(conn).ReadString('\n')
+	response, _ := bufio.NewReader(conn).ReadString('\n')
 	fmt.Println("[RESP] - ", response)
 }
