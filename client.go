@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"net"
-	"time"
 )
 
 func main() {
@@ -17,8 +16,6 @@ func main() {
 
 	//Escrever na socket
 	fmt.Fprintf(conn, "Testing connection")
-
-	time.Sleep(1 * time.Second)
 
 	response, _ := bufio.NewReader(conn).ReadString('\n')
 	fmt.Println("[RESP] - ", response)
