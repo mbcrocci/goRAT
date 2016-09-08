@@ -1,22 +1,40 @@
 package main
 
 import (
-	"bufio"
+	"crypto/tls"
 	"fmt"
+	"io/ioutil"
 	"log"
-	"net"
+	"net/http"
 )
 
 func main() {
-	conn, err := net.Dial("tcp", "127.0.0.1:1337")
+	// Create Http connection with TLS
+	cert, err := tls.LoadX509KeyPair("certs/client.pem", "certs/client.key")
 	if err != nil {
-		log.Fatalf("[ERROR] Can't create connection!: %v", err)
+		log.Println("[ERROR] - ", err)
 	}
-	defer conn.Close()
 
-	//Escrever na socket
-	fmt.Fprintf(conn, "Testing connection")
+	config := tls.Config{Certificates: []tls.Certificate{cert}, InsecureSkipVerify: true}
 
-	response, _ := bufio.NewReader(conn).ReadString('\n')
-	fmt.Println("[RESP] - ", response)
+	tr := &http.Transport{
+		TLSClientConfig:    &config,
+		DisableCompression: true,
+	}
+
+	tlsClient := &http.Client{Transport: tr}
+
+	resp, err := tlsClient.Get("https://127.0.0.1:1337")
+	if err != nil {
+		log.Println("[ERROR] - ", err)
+	}
+	defer resp.Body.Close()
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		log.Println("[ERROR] - ", err)
+	}
+
+	fmt.Println("[BODY] - ", string(body))
+
 }
