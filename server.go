@@ -1,34 +1,32 @@
 package main
 
 import (
+	"crypto/rand"
+	"crypto/tls"
+	"io"
 	"log"
-	"net"
+	"net/http"
 )
 
 func main() {
-	ln, err := net.Listen("tcp", ":1337")
+	cert, err := tls.LoadX509KeyPair("certs/server.pem", "certs/server.key")
 	if err != nil {
-		log.Fatalf("[ERROR] - Establishing server: %v", err)
+		log.Fatalf("server: loadkeys: %s", err)
 	}
-	defer ln.Close()
+	config := &tls.Config{Certificates: []tls.Certificate{cert}}
+	config.Rand = rand.Reader
 
-	for {
-		conn, err := ln.Accept()
-		if err != nil {
-			log.Fatal("[ERROR] - Can't accept connections: %v", err)
-		}
+	tlsServer := &http.Server{TLSConfig: config}
+	tlsServer.Addr = ":1337"
 
-		go handleConn(conn)
+	http.HandleFunc("/", handleConn)
+
+	err = tlsServer.ListenAndServeTLS("certs/server.pem", "certs/server.key")
+	if err != nil {
+		log.Println("[ERROR] - ", err)
 	}
 }
 
-func handleConn(conn net.Conn) {
-	buf := make([]byte, 1024)
-	_, err := conn.Read(buf)
-	if err != nil {
-		log.Println("[Error] - Can't read: ", err)
-	}
-	log.Println("[REQUEST] - ", string(buf))
-	conn.Write([]byte("Connection Successful"))
-	conn.Close()
+func handleConn(w http.ResponseWriter, r *http.Request) {
+	io.WriteString(w, "GOT YOUR REQUEST")
 }
